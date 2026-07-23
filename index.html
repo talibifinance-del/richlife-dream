@@ -450,17 +450,19 @@ function calc(){
   // ---- financing (teaching module) ----
   const loan=num('loan'), loanRate=num('loanRate'), finOut=document.getElementById('finOut');
   if(loan>0){
-    const grownLoan=loan*Math.pow(1+i,n);          // the loan money, invested at the growth rate
-    const debt=loan*Math.pow(1+loanRate/100,n);    // the loan + interest you owe back
-    const net=grownLoan-debt;
-    const worthwhile=i>loanRate/100;
+    const P0b=P0+loan, gb=Math.pow(1+i,n);
+    let A2; if(i===0) A2=(target-P0b)/n; else A2=(target-P0b*gb)/((1+i)*(gb-1)/i);
+    const PMT2=Math.max(0,A2/12);                    // investment deposit needed WITH the loan invested
+    const rm=loanRate/100/12, N=n*12;
+    const R = rm===0 ? loan/N : loan*rm/(1-Math.pow(1+rm,-N)); // monthly loan repayment (amortized over n years)
+    const totalWith=PMT2+R, cheaper=totalWith<PMT, diff=Math.abs(totalWith-PMT), worthwhile=i>loanRate/100;
     finOut.innerHTML=
-      `<div class="fin-good">ה-<b>${fmt.format(loan)} ₪</b> מימון, מושקעים ל-${n} שנים, גדלים ל-<b>${fmt.format(Math.round(grownLoan))} ₪</b>. זה הזינוק. <b>אבל</b> צריך להחזיר <b>${fmt.format(Math.round(debt))} ₪</b> (הקרן + ריבית ${loanRate}%). לכן זה לא "כסף חינם".</div>`+
+      `<div class="fin-good">ההפרשה החודשית <b>להשקעה</b> יורדת מ-<b>${fmt.format(Math.round(PMT))} ₪</b> ל-<b>${fmt.format(Math.round(PMT2))} ₪</b> (כי המימון עובד בשוק). <b>אבל</b> נוסף <b>החזר חודשי לבנק</b> של <b>~${fmt.format(Math.round(R))} ₪</b> על ההלוואה (פרוס על ${n} שנים).<br><br>סה"כ שיוצא לך מהכיס כל חודש: <b>${fmt.format(Math.round(totalWith))} ₪</b> עם מימון · לעומת <b>${fmt.format(Math.round(PMT))} ₪</b> בלי מימון.</div>`+
       `<div class="fin-scenarios">`+
-        `<div class="fin-sc ${net>=0?'up':'down'}"><div class="h">${net>=0?'🟢':'🔴'} בתשואה ${grow}%, השורה התחתונה</div><div class="v">${net>=0?'+':''}${fmt.format(Math.round(net))} ₪</div><div class="s">${net>=0?'המימון הרוויח לך':'המימון הפסיד לך'}</div></div>`+
-        `<div class="fin-sc down"><div class="h">🔴 אם השוק ייתן פחות מ-${loanRate}%</div><div class="v">הפסד</div><div class="s">ההלוואה עולה יותר ממה שההשקעה מרוויחה</div></div>`+
+        `<div class="fin-sc ${cheaper?'up':'down'}"><div class="h">${cheaper?'🟢':'🔴'} בתשואה ${grow}% שהזנת</div><div class="v">${cheaper?'-':'+'}${fmt.format(Math.round(diff))} ₪</div><div class="s">${cheaper?'המימון חוסך לך בחודש':'המימון עולה לך יותר בחודש'}</div></div>`+
+        `<div class="fin-sc down"><div class="h">🔴 אם השוק ייתן פחות מ-${loanRate}%</div><div class="v">הפסד</div><div class="s">ההחזר לבנק גבוה מהתשואה</div></div>`+
       `</div>`+
-      `<div class="fin-bad"><b>הכלל:</b> המימון מרוויח רק אם התשואה בפועל גבוהה מריבית ההלוואה (${loanRate}%). ${worthwhile?`מזינה ${grow}% - מעל הרף, אבל תשואה אף פעם לא מובטחת.`:`מזינה ${grow}% - <b>מתחת</b> לרף, כלומר כאן המימון <b>מפסיד</b>.`} ומעל הכל: צריך להחזיר את הכל <b>גם אם השוק יורד</b> - זה הסיכון.</div>`;
+      `<div class="fin-bad"><b>הלקח:</b> המימון "חוסך" בחודש רק אם התשואה בפועל גבוהה מריבית ההלוואה (${loanRate}%). ${worthwhile?`מזינה ${grow}% - מעל הרף, אבל תשואה אף פעם לא מובטחת.`:`<b>מזינה ${grow}% - מתחת לריבית, אז המימון עולה יותר ממה שהוא מרוויח.</b>`} ומעל הכל: את חייבת להחזיר את ההלוואה לבנק <b>גם אם השוק יורד</b> - זה הסיכון.</div>`;
   } else finOut.innerHTML='';
 
   drawChart(capSeries(P0,annual,i,n),target,n);

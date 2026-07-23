@@ -450,20 +450,17 @@ function calc(){
   // ---- financing (teaching module) ----
   const loan=num('loan'), loanRate=num('loanRate'), finOut=document.getElementById('finOut');
   if(loan>0){
-    const P0b=P0+loan, gb=Math.pow(1+i,n);
-    let A2; if(i===0) A2=(target-P0b)/n; else A2=(target-P0b*gb)/((1+i)*(gb-1)/i);
-    const PMT2=Math.max(0,A2/12);
     const grownLoan=loan*Math.pow(1+i,n);          // the loan money, invested at the growth rate
-    const debt=loan*Math.pow(1+loanRate/100,n);    // the loan + interest you owe
+    const debt=loan*Math.pow(1+loanRate/100,n);    // the loan + interest you owe back
     const net=grownLoan-debt;
     const worthwhile=i>loanRate/100;
     finOut.innerHTML=
-      `<div class="fin-good">עם מימון של <b>${fmt.format(loan)} ₪</b>, ההפרשה החודשית יורדת מ-<b>${fmt.format(Math.round(PMT))} ₪</b> ל-<b>${fmt.format(Math.round(PMT2))} ₪</b>. זו ההאצה שחיפשת.</div>`+
+      `<div class="fin-good">ה-<b>${fmt.format(loan)} ₪</b> מימון, מושקעים ל-${n} שנים, גדלים ל-<b>${fmt.format(Math.round(grownLoan))} ₪</b>. זה הזינוק. <b>אבל</b> צריך להחזיר <b>${fmt.format(Math.round(debt))} ₪</b> (הקרן + ריבית ${loanRate}%). לכן זה לא "כסף חינם".</div>`+
       `<div class="fin-scenarios">`+
-        `<div class="fin-sc up"><div class="h">🟢 אם התשואה תהיה ${grow}%</div><div class="v">${net>=0?'+':''}${fmt.format(Math.round(net))} ₪</div><div class="s">המימון ${net>=0?'הרוויח לך':'הפסיד לך'}</div></div>`+
-        `<div class="fin-sc down"><div class="h">🔴 אם השוק ייתן פחות מ-${loanRate}%</div><div class="v">הפסד</div><div class="s">משלמים על ההלוואה יותר ממה שמרוויחים</div></div>`+
+        `<div class="fin-sc ${net>=0?'up':'down'}"><div class="h">${net>=0?'🟢':'🔴'} בתשואה ${grow}%, השורה התחתונה</div><div class="v">${net>=0?'+':''}${fmt.format(Math.round(net))} ₪</div><div class="s">${net>=0?'המימון הרוויח לך':'המימון הפסיד לך'}</div></div>`+
+        `<div class="fin-sc down"><div class="h">🔴 אם השוק ייתן פחות מ-${loanRate}%</div><div class="v">הפסד</div><div class="s">ההלוואה עולה יותר ממה שההשקעה מרוויחה</div></div>`+
       `</div>`+
-      `<div class="fin-bad"><b>הכלל הפשוט:</b> המימון משתלם רק אם התשואה בפועל גבוהה מריבית ההלוואה (${loanRate}%). ${worthwhile?`מזינה ${grow}% - כרגע מעל הרף, אבל תשואה לא מובטחת.`:`מזינה ${grow}% - <b>מתחת</b> לרף, כלומר המימון מפסיד כאן.`} ובכל תרחיש: צריך להחזיר את כל ה-${fmt.format(loan)} ₪ + ריבית, <b>גם אם השוק יורד</b>. זה הסיכון.</div>`;
+      `<div class="fin-bad"><b>הכלל:</b> המימון מרוויח רק אם התשואה בפועל גבוהה מריבית ההלוואה (${loanRate}%). ${worthwhile?`מזינה ${grow}% - מעל הרף, אבל תשואה אף פעם לא מובטחת.`:`מזינה ${grow}% - <b>מתחת</b> לרף, כלומר כאן המימון <b>מפסיד</b>.`} ומעל הכל: צריך להחזיר את הכל <b>גם אם השוק יורד</b> - זה הסיכון.</div>`;
   } else finOut.innerHTML='';
 
   drawChart(capSeries(P0,annual,i,n),target,n);

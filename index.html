@@ -47,6 +47,25 @@ body{
 .card{background:var(--card);border-radius:20px;padding:clamp(16px,3vw,24px);box-shadow:var(--shadow);border:1px solid rgba(var(--pine-rgb),.10)}
 .sec-lbl{font-size:13px;font-weight:900;color:var(--pine);background:var(--sage-tint);display:inline-block;padding:5px 13px;border-radius:100px;margin-bottom:14px}
 .hint{grid-column:1/-1;font-size:11.5px;font-weight:600;color:var(--ink-soft);margin-top:-4px;line-height:1.5}
+.fin>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px}
+.fin>summary::-webkit-details-marker{display:none}
+.fin-chev{margin-inline-start:auto;color:var(--ink-soft);transition:transform .25s;font-size:13px}
+.fin[open] .fin-chev{transform:rotate(180deg)}
+.fin-body{margin-top:14px}
+.fin-warn{background:rgba(var(--red-rgb),.08);border:1.5px solid rgba(var(--red-rgb),.25);border-radius:12px;padding:12px 14px;font-size:12.5px;font-weight:700;color:#8f3a29;line-height:1.55;margin-bottom:14px}
+.fin-good{background:var(--sage-tint);border-radius:12px;padding:12px 14px;font-size:13.5px;font-weight:700;color:var(--pine-darker);line-height:1.55;margin-bottom:10px}
+.fin-good b{color:var(--pine)}
+.fin-scenarios{display:flex;gap:10px;margin:10px 0}
+.fin-sc{flex:1;border-radius:12px;padding:12px 10px;text-align:center}
+.fin-sc.up{background:rgba(var(--pine-rgb),.10);border:1.5px solid rgba(var(--pine-rgb),.28)}
+.fin-sc.down{background:rgba(var(--red-rgb),.08);border:1.5px solid rgba(var(--red-rgb),.28)}
+.fin-sc .h{font-size:11.5px;font-weight:800;margin-bottom:4px}
+.fin-sc.up .h{color:var(--pine-deep)} .fin-sc.down .h{color:#8f3a29}
+.fin-sc .v{font-size:16px;font-weight:900}
+.fin-sc.up .v{color:var(--pine-deep)} .fin-sc.down .v{color:#8f3a29}
+.fin-sc .s{font-size:11px;font-weight:700;margin-top:3px;color:var(--ink-soft)}
+.fin-bad{background:rgba(var(--red-rgb),.06);border:1.5px solid rgba(var(--red-rgb),.22);border-radius:12px;padding:12px 14px;font-size:13px;font-weight:700;color:#8f3a29;line-height:1.6}
+.fin-bad b{color:#8f3a29}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px 14px}
 .field.full{grid-column:1/-1}
 .field label{display:block;font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:6px}
@@ -196,6 +215,24 @@ svg.chart{display:block;width:100%;height:auto}
     </div>
     <div class="insight" id="insight"></div>
   </div>
+
+  <details class="card fin" style="margin-top:16px">
+    <summary><span class="sec-lbl" style="margin:0">💳 ומה אם לוקחים מימון כדי להאיץ? (מתקדם)</span><span class="fin-chev">▾</span></summary>
+    <div class="fin-body">
+      <div class="fin-warn">⚠️ מינוף = הלוואה כדי להשקיע. הוא מגדיל את הרווח, ובדיוק באותה מידה את ההפסד. מתאים רק למי שמבין/ה את הסיכון ויכול/ה לעמוד בהחזר גם אם השוק יורד. זה לא לכולם, וזו לא המלצה.</div>
+      <div class="fields">
+        <div class="field">
+          <label>סכום מימון (הלוואה)</label>
+          <div class="input-shell"><span class="unit">₪</span><input id="loan" type="text" inputmode="numeric" value="0" placeholder="0"></div>
+        </div>
+        <div class="field">
+          <label>ריבית ההלוואה (שנתית)</label>
+          <div class="input-shell"><input id="loanRate" type="text" inputmode="decimal" value="7" placeholder="0"><span class="unit" style="padding-inline-start:8px;padding-inline-end:15px">%</span></div>
+        </div>
+      </div>
+      <div id="finOut"></div>
+    </div>
+  </details>
 
   <div class="chart-card">
     <div class="chart-head">📈 המסע אל החופש</div>
@@ -379,11 +416,11 @@ const fmt=new Intl.NumberFormat('he-IL',{maximumFractionDigits:0});
 function grp(v){v=(''+v).replace(/[^\d]/g,'');return v===''?'':(+v).toLocaleString('en-US');}
 function num(id){return +(''+document.getElementById(id).value).replace(/[^\d.]/g,'')||0;}
 
-['income','have'].forEach(id=>{
+['income','have','loan'].forEach(id=>{
   const el=document.getElementById(id);
   el.addEventListener('input',()=>{const p=el.selectionStart,old=el.value;el.value=grp(el.value);const d=el.value.length-old.length;el.setSelectionRange(p+d,p+d);calc();});
 });
-['wrate','yrs','grow'].forEach(id=>document.getElementById(id).addEventListener('input',calc));
+['wrate','yrs','grow','loanRate'].forEach(id=>document.getElementById(id).addEventListener('input',calc));
 
 // capital growth (annual, annuity-due) given annual deposit A → array year0..n
 function capSeries(P0,A,i,n){const s=[P0];let bal=P0+A;for(let y=1;y<=n;y++){bal*=(1+i);s.push(bal);if(y<n)bal+=A;}return s;}
@@ -409,6 +446,25 @@ function calc(){
   else if(covered){ins.innerHTML=`🎉 מדהים - עם ההון שכבר יש לכם, הריבית לבדה מביאה אתכם ליעד בעוד ${n} שנים. <b>לא צריך להפריש אף שקל נוסף.</b>`;}
   else{ins.innerHTML=`רק <b>${fmt.format(Math.round(PMT))} ₪</b> בחודש, והריבית מוסיפה עוד <b>${fmt.format(Math.round(mktGain))} ₪</b> - וכך מגיעים ל-<b>${fmt.format(Math.round(target))} ₪</b> שמשחררים אתכם לחופש.`;}
   ins.style.display='block';
+
+  // ---- financing (teaching module) ----
+  const loan=num('loan'), loanRate=num('loanRate'), finOut=document.getElementById('finOut');
+  if(loan>0){
+    const P0b=P0+loan, gb=Math.pow(1+i,n);
+    let A2; if(i===0) A2=(target-P0b)/n; else A2=(target-P0b*gb)/((1+i)*(gb-1)/i);
+    const PMT2=Math.max(0,A2/12);
+    const grownLoan=loan*Math.pow(1+i,n);          // the loan money, invested at the growth rate
+    const debt=loan*Math.pow(1+loanRate/100,n);    // the loan + interest you owe
+    const net=grownLoan-debt;
+    const worthwhile=i>loanRate/100;
+    finOut.innerHTML=
+      `<div class="fin-good">עם מימון של <b>${fmt.format(loan)} ₪</b>, ההפרשה החודשית יורדת מ-<b>${fmt.format(Math.round(PMT))} ₪</b> ל-<b>${fmt.format(Math.round(PMT2))} ₪</b>. זו ההאצה שחיפשת.</div>`+
+      `<div class="fin-scenarios">`+
+        `<div class="fin-sc up"><div class="h">🟢 אם התשואה תהיה ${grow}%</div><div class="v">${net>=0?'+':''}${fmt.format(Math.round(net))} ₪</div><div class="s">המימון ${net>=0?'הרוויח לך':'הפסיד לך'}</div></div>`+
+        `<div class="fin-sc down"><div class="h">🔴 אם השוק ייתן פחות מ-${loanRate}%</div><div class="v">הפסד</div><div class="s">משלמים על ההלוואה יותר ממה שמרוויחים</div></div>`+
+      `</div>`+
+      `<div class="fin-bad"><b>הכלל הפשוט:</b> המימון משתלם רק אם התשואה בפועל גבוהה מריבית ההלוואה (${loanRate}%). ${worthwhile?`מזינה ${grow}% - כרגע מעל הרף, אבל תשואה לא מובטחת.`:`מזינה ${grow}% - <b>מתחת</b> לרף, כלומר המימון מפסיד כאן.`} ובכל תרחיש: צריך להחזיר את כל ה-${fmt.format(loan)} ₪ + ריבית, <b>גם אם השוק יורד</b>. זה הסיכון.</div>`;
+  } else finOut.innerHTML='';
 
   drawChart(capSeries(P0,annual,i,n),target,n);
 }
@@ -459,8 +515,8 @@ let CH=null;
 function short(v){v=Math.round(v);if(v>=1e6)return (v/1e6).toFixed(v>=1e7?0:1)+'M';if(v>=1e3)return Math.round(v/1e3)+'K';return v;}
 
 const SKEY='richlife-dream-v1';
-function enc(){return JSON.stringify([document.getElementById('income').value,document.getElementById('wrate').value,document.getElementById('have').value,document.getElementById('yrs').value,document.getElementById('grow').value]);}
-function dec(str){try{const a=JSON.parse(str);if(!Array.isArray(a))return false;document.getElementById('income').value=grp(a[0]);document.getElementById('wrate').value=a[1]??'4';document.getElementById('have').value=grp(a[2]);document.getElementById('yrs').value=a[3]??'';document.getElementById('grow').value=a[4]??'6';return true;}catch(e){return false;}}
+function enc(){return JSON.stringify([document.getElementById('income').value,document.getElementById('wrate').value,document.getElementById('have').value,document.getElementById('yrs').value,document.getElementById('grow').value,document.getElementById('loan').value,document.getElementById('loanRate').value]);}
+function dec(str){try{const a=JSON.parse(str);if(!Array.isArray(a))return false;document.getElementById('income').value=grp(a[0]);document.getElementById('wrate').value=a[1]??'4';document.getElementById('have').value=grp(a[2]);document.getElementById('yrs').value=a[3]??'';document.getElementById('grow').value=a[4]??'6';document.getElementById('loan').value=grp(a[5]??'0');document.getElementById('loanRate').value=a[6]??'7';return true;}catch(e){return false;}}
 function makeLink(){return location.origin+location.pathname+location.search+'#d='+encodeURIComponent(enc());}
 (function(){
   const btn=document.getElementById('shareBtn'),wrap=document.getElementById('actLink'),field=document.getElementById('linkField'),copy=document.getElementById('copyBtn');
